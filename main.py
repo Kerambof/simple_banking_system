@@ -1,14 +1,14 @@
-import getpass
-
+import getpass  # To hide PIN input
 
 class BankAccount:
-
-    def __init__(self, pin):
+    def __init__(self, owner, accno, pin):
+        self.owner = owner
         self.balance = 0
+        self.accno = accno
         self.pin = pin
 
     def authenticate(self):
-        entered_pin = getpass.getpass("Enter your PIN: ")
+        entered_pin = getpass.getpass("Enter your pin: ")  # Hides input securely
         return entered_pin == self.pin
 
     def deposit(self):
@@ -16,57 +16,103 @@ class BankAccount:
             amount = int(input("Enter amount to deposit: "))
             if amount > 0:
                 self.balance += amount
-                print("Deposit successful, account balance is {self.balance}")
+                print(f"Deposit successful! Your balance is {self.balance}")
             else:
-                print("Amount must be above 0")
+                print("Amount must be positive.")
         else:
-            print("Incorrect PIN")
+            print("Wrong pin, please try again.")
+
+    def check_balance(self):
+        if self.authenticate():
+            print(f"Your balance is {self.balance}")
+        else:
+            print("Wrong pin, please try again.")
 
     def withdraw(self):
         if self.authenticate():
             amount = int(input("Enter amount to withdraw: "))
-            if amount <= 0:
-                print("Invalid amount")
-            elif amount > self.balance:
-                print("Insufficient funds")
-            else:
+            if 0 < amount <= self.balance:
                 self.balance -= amount
-                print("Withdrawal successful")
+                print(f"You have successfully withdrawn {amount}. Remaining balance: {self.balance}")
+            else:
+                print("Insufficient balance or invalid amount.")
         else:
-            print("Incorrect PIN")
+            print("Wrong pin, please try again.")
 
-    def check_balance(self):
+    def transfer_money(self, accounts):
         if self.authenticate():
-            print("Current Balance:", self.balance)
+            receiver_acc = input("Enter receiver account number: ")
+            if receiver_acc in accounts:
+                receiver = accounts[receiver_acc]
+                amount = int(input("Enter amount to transfer: "))
+                if 0 < amount <= self.balance:
+                    self.balance -= amount
+                    receiver.balance += amount
+                    print(f"Transferred {amount} to {receiver.owner}. Your new balance: {self.balance}")
+                else:
+                    print("Insufficient balance or invalid amount.")
+            else:
+                print("Receiver account does not exist.")
         else:
-            print("Incorrect PIN")
+            print("Wrong pin, please try again.")
 
 
-# Create account with a PIN
-account = BankAccount(pin=getpass.getpass("Set pin: "))
+# Dictionary to store all accounts
+accounts = {}
 
-# Menu loop
+
+# Function to create a new account
+def create_account():
+    owner = input("Enter your name to create account: ")
+    accno = input("Set account number: ")
+    pin = getpass.getpass("Set your pin: ")  # Hide PIN during account creation
+
+    if accno in accounts:
+        print("Account number already exists. Choose another one.")
+        return
+
+    account = BankAccount(owner, accno, pin)
+    accounts[accno] = account
+    print(f"Account for {owner} created successfully!")
+
+
+# Function to select an account
+def select_account():
+    accno = input("Enter your account number: ")
+    if accno in accounts:
+        return accounts[accno]
+    else:
+        print("Account does not exist.")
+        return None
+
+
+# Main menu loop
 while True:
-    print("\n--- BANK MENU ---")
-    print("1. Deposit")
-    print("2. Withdraw")
-    print("3. Check Balance")
-    print("4. Exit")
+    print("\n--- Bank Menu ---")
+    print("1: Create new account")
+    print("2: Deposit")
+    print("3: Check balance")
+    print("4: Withdraw")
+    print("5: Transfer money")
+    print("100: Exit")
 
-    choice = input("Choose an option: ")
+    choice = input("Enter your choice: ")
 
     if choice == "1":
-        account.deposit()
-
-    elif choice == "2":
-        account.withdraw()
-
-    elif choice == "3":
-        account.check_balance()
-
-    elif choice == "4":
-        print("Thank you for banking with us!")
+        create_account()
+    elif choice in ["2", "3", "4", "5"]:
+        account = select_account()
+        if account:
+            if choice == "2":
+                account.deposit()
+            elif choice == "3":
+                account.check_balance()
+            elif choice == "4":
+                account.withdraw()
+            elif choice == "5":
+                account.transfer_money(accounts)
+    elif choice == "100":
+        print("Thanks for banking with us!")
         break
-
     else:
-        print("Invalid option. Try again.")
+        print("Invalid choice. Try again.")
